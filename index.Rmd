@@ -8,11 +8,45 @@ site: distill::distill_website
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 
+library(tidyverse)
+library(rvest)
+
 # Learn more about creating websites with Distill at:
 # https://rstudio.github.io/distill/website.html
 
 # Learn more about publishing to GitHub Pages at:
 # https://rstudio.github.io/distill/publish_website.html#github-pages
+
+```
+
+
+```{r getting birthdates.csv}
+
+x <- read_html("https://en.wikipedia.org/wiki/UEFA_Euro_2020_squads")
+
+raw_data <- x %>%
+  html_elements("td:nth-child(4)") %>%
+  html_text2()%>%
+  as_tibble()
+
+write_csv(raw_data, "birthdates.csv")
+
+```
+
+
+```{r plotting}
+x <- read_csv("birthdates.csv", col_types = cols(value = col_character()))
+
+x %>% 
+  mutate(date = parse_date(str_sub(value, 2, 11))) %>% 
+  mutate(raw_month = months(date)) %>% 
+  mutate(month = parse_factor(raw_month, levels = month.name)) %>% 
+  group_by(month) %>% 
+  summarize(total = n()) %>% 
+  ggplot(aes(x=month, y = total, fill = month))+
+  geom_col()+
+  theme_classic()+
+  labs(title = "Number of of EU Soccer Player's Birthdays in each Month", subtitle = "There are more professional soccer players born in the early parts of the year.", x = "Month", y = "Number of Players", caption = "Source: Wikipedia", fill="Month")
 
 ```
 
